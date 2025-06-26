@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, MapPin, Users, Shirt, Share2, Clock, Sparkles, Music, Zap, Star, Heart } from 'lucide-react';
 
 function App() {
