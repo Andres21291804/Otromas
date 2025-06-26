@@ -10,6 +10,10 @@ function App() {
   });
 
   const [isPartyTime, setIsPartyTime] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Target date: August 23, 2025, 12:00 PM
   const targetDate = new Date('2025-08-23T12:00:00').getTime();
@@ -35,6 +39,31 @@ function App() {
     return () => clearInterval(timer);
   }, [targetDate]);
 
+  // Función para manejar la carga del video
+  const handleVideoLoad = () => {
+    console.log('Video cargado exitosamente');
+    setVideoLoaded(true);
+    if (videoRef.current) {
+      videoRef.current.play().catch((error) => {
+        console.error('Error al reproducir video:', error);
+      });
+    }
+  };
+
+  // Función para manejar errores del video
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('Error cargando video:', e);
+    setVideoError(true);
+    setVideoLoaded(false);
+  };
+
+  // Intentar reproducir el video cuando el usuario interactúe
+  const handleUserInteraction = () => {
+    if (videoRef.current && !videoLoaded) {
+      videoRef.current.play().catch(console.error);
+    }
+  };
+
   const shareEvent = () => {
     if (navigator.share) {
       navigator.share({
@@ -46,35 +75,49 @@ function App() {
       navigator.clipboard.writeText(window.location.href);
       alert('¡Enlace copiado! 🎉 ¡Comparte la fiesta!');
     }
-  }
-    const audioRef = useRef<HTMLAudioElement>(null);
-
-<audio autoPlay loop className="hidden">
-  {/* Reemplaza "public/musica" con la ruta correcta a tu archivo de audio */}
-  <source src="/musica.mp3" type="audio/mpeg" />
- <source src="public/musica" type="audio/mpeg" />
- </audio> 
+  };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Video Background Container */}
-      <div className="fixed inset-0 w-full h-full z-0">
-        {/* Video de fondo */}
-        <video 
-          className="w-full h-full object-cover"
-          autoPlay 
-          muted 
-          loop 
-          playsInline
-          preload="auto"
-        >
-          <source src="/video.mp4" type="video/mp4" />
-          Tu navegador no soporta videos HTML5.
-        </video>
+    <div className="relative min-h-screen bg-black text-white font-sans" onClick={handleUserInteraction}>
+      {/* Video de fondo */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        {!videoError ? (
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            onLoadedData={handleVideoLoad}
+            onCanPlay={handleVideoLoad}
+            onError={handleVideoError}
+            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3C/svg%3E"
+          >
+            <source src="./cositas.mp4" type="video/mp4" />
+            <source src="./Visuales.mp4" type="video/mp4" />
+            <source src="/cositas.mp4" type="video/mp4" />
+            <source src="/Visuales.mp4" type="video/mp4" />
+            Tu navegador no soporta el elemento video.
+          </video>
+        ) : null}
+        
+        {/* Fallback gradient animado si el video no carga */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 ${videoLoaded && !videoError ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-900 via-black to-green-800 animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-green-500/10 to-transparent animate-pulse" style={{animationDelay: '1s'}}></div>
+        </div>
         
         {/* Overlay para mejorar legibilidad del texto */}
-        <div className="absolute inset-0 bg-black/50 z-10"></div>
+        <div className="absolute inset-0 bg-black/30 z-10"></div>
       </div>
+
+      {/* Audio de fondo (opcional) */}
+      <audio ref={audioRef} loop className="hidden">
+        <source src="/musica-fondo.mp3" type="audio/mpeg" />
+        <source src="/musica-fondo.ogg" type="audio/ogg" />
+      </audio>
 
       {/* Main Content */}
       <div className="relative z-20 min-h-screen flex flex-col">
@@ -250,6 +293,13 @@ function App() {
           <Music className="w-8 h-8 text-white" />
         </div>
       </div>
+
+      {/* Debug info (solo en desarrollo) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-4 left-4 z-50 bg-black/80 text-white p-2 rounded text-xs">
+          Video: {videoLoaded ? '✅ Cargado' : videoError ? '❌ Error' : '⏳ Cargando...'}
+        </div>
+      )}
     </div>
   );
 }
